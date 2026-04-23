@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Ombor — Formachi Admin{% endblock %}
+{% block page_title %}📦 Ombor holati{% endblock %}
+
+{% block content %}
+{% if low_count > 0 %}
+<div class="alert alert-danger">
+  ⚠️ <b>{{ low_count }} ta o'lcham</b> kam qolgan (2 ta yoki kam)!
+</div>
+{% endif %}
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Mahsulot</th>
+        <th>O'lcham</th>
+        <th>Miqdor</th>
+        <th>Holat</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% set current_product = namespace(id=none) %}
+      {% for s in stocks %}
+      <tr>
+        <td>
+          {% if s.product_id != current_product.id %}
+            {% set current_product.id = s.product_id %}
+            <div style="font-weight:700;">{{ s.product.name }}</div>
+          {% else %}
+            <div style="color:var(--text-muted);font-size:12px;">↳</div>
+          {% endif %}
+        </td>
+        <td>
+          <span style="font-family:'IBM Plex Mono';font-weight:700;font-size:14px;">{{ s.size }}</span>
+        </td>
+        <td>
+          <span style="font-family:'IBM Plex Mono';font-size:16px;
+            color:{% if s.quantity == 0 %}var(--danger){% elif s.quantity <= 2 %}var(--warning){% else %}var(--accent){% endif %};">
+            {{ s.quantity }} ta
+          </span>
+        </td>
+        <td>
+          {% if s.quantity == 0 %}
+            <span class="badge badge-cancelled">❌ Tugagan</span>
+          {% elif s.quantity <= 2 %}
+            <span class="badge badge-pending">⚠️ Kam qoldi</span>
+          {% else %}
+            <span class="badge badge-confirmed">✅ Yetarli</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="/admin/products/{{ s.product_id }}/edit" class="btn btn-secondary btn-sm">
+            ✏️ To'ldirish
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
