@@ -164,9 +164,21 @@ async def get_all_orders(session: AsyncSession, limit: int = 50):
 
 
 async def update_order_status(session: AsyncSession, order_id: int, status: str):
+    order = await get_order_with_items(session, order_id)
+    previous_status = order.status if order else None
+    payment_type = order.payment_type if order else None
+
     await session.execute(
         update(Order).where(Order.id == order_id).values(status=OrderStatus(status))
     )
+
+    # Paynet/card checks already decrement stock in check_confirmed.
+    # Credit orders are confirmed from the order group, so handle them here once.
+    if previous_status == OrderStatus.PENDING and status == "confirmed" and payment_type == PaymentType.CREDIT:
+        for item in (order.items or []):
+            if item.size:
+                await decrease_stock(session, item.product_id, item.size, item.quantity)
+
     await session.commit()
 
 
@@ -237,7 +249,7 @@ async def decrease_stock(session: AsyncSession, product_id: int,
     if not stock or stock.quantity < qty:
         return False
     stock.quantity -= qty
-    await session.commit()
+    await session.flush()
     return True
 
 
